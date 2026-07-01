@@ -55,7 +55,7 @@ app.innerHTML = `
       </div>
     </div>
     <div class="inputrow">
-      <input id="new" placeholder="Whaat needs to happen?" autocomplete="off" />
+      <input id="new" placeholder="What needs to happen?" autocomplete="off" />
       <button class="addbtn" id="add">+</button>
     </div>
     <ul class="list" id="list"></ul>

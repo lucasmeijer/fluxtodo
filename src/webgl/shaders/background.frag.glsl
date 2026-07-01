@@ -72,7 +72,7 @@ void main() {
   col *= 0.55 + 0.6 * vig;
 
   // subtle grain
-  col += (hash2(uv * uResolution + uTime).x) * 0.15;
+  col += (hash2(uv * uResolution + uTime).x) * 0.025;
 
   gl_FragColor = vec4(col, 1.0);
 }
