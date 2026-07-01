@@ -41,7 +41,7 @@ void main() {
   vec2 uv = vUv;
   vec2 p = (uv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
 
-  float t = uTime * 0.06;
+  float t = uTime * 0.01;
 
   // domain-warped fbm for a liquid, flowing look
   vec2 q = vec2(fbm(p * 1.6 + t), fbm(p * 1.6 - t + 4.3));
@@ -72,7 +72,7 @@ void main() {
   col *= 0.55 + 0.6 * vig;
 
   // subtle grain
-  col += (hash2(uv * uResolution + uTime).x) * 0.015;
+  col += (hash2(uv * uResolution + uTime).x) * 0.15;
 
   gl_FragColor = vec4(col, 1.0);
 }

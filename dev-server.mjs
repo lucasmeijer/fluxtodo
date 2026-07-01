@@ -8,7 +8,6 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 3000;
-const WS_PORT = PORT + 1;
 const DIST = path.join(__dirname, "dist");
 const SRC = path.join(__dirname, "src");
 const SHADER_SRC = path.join(SRC, "webgl", "shaders");
@@ -28,10 +27,13 @@ const MIME = {
 const LIVERELOAD_CLIENT = `
 <script>
 (() => {
-  const url = "ws://" + location.hostname + ":${WS_PORT}";
+  // Same-origin WebSocket so it works through proxies (Atelier preview) and https.
+  const proto = location.protocol === "https:" ? "wss:" : "ws:";
+  const url = proto + "//" + location.host + "/__livereload";
   let ws;
   function connect() {
     ws = new WebSocket(url);
+    ws.onopen = () => console.log("[hot] live-reload connected");
     ws.onmessage = async (e) => {
       let msg;
       try { msg = JSON.parse(e.data); } catch { return; }
@@ -139,15 +141,25 @@ function serve() {
       res.writeHead(404).end("Not found");
     }
   });
+  // Attach the live-reload WebSocket to THIS server (same port/origin) so it
+  // survives proxies (Atelier preview) and https upgrades.
+  wss = new WebSocketServer({ noServer: true });
+  server.on("upgrade", (req, socket, head) => {
+    const { pathname } = new URL(req.url, "http://localhost");
+    if (pathname === "/__livereload") {
+      wss.handleUpgrade(req, socket, head, (ws) => wss.emit("connection", ws, req));
+    } else {
+      socket.destroy();
+    }
+  });
   server.listen(PORT, () =>
-    console.log(`\u2728 Dev server:  http://localhost:${PORT}`)
+    console.log(`\u2728 Dev server:  http://localhost:${PORT}  (live-reload on same origin)`)
   );
   return server;
 }
 
 // ---- WebSocket broadcast ----------------------------------------------------
-const wss = new WebSocketServer({ port: WS_PORT });
-console.log(`\ud83d\udd0c Live-reload WS on port ${WS_PORT}`);
+let wss;
 function broadcast(obj) {
   const data = JSON.stringify(obj);
   let n = 0;
