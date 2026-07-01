@@ -1,0 +1,20 @@
+{
+  "name": "webgl-todo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node dev-server.mjs",
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "three": "^0.160.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.160.0",
+    "esbuild": "^0.20.2",
+    "puppeteer-core": "^22.15.0",
+    "typescript": "^5.4.0",
+    "ws": "^8.16.0"
+  }
+}

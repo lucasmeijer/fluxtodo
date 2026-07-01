@@ -1,0 +1,286 @@
+:root {
+  --glass: rgba(18, 20, 42, 0.42);
+  --glass-brd: rgba(150, 180, 255, 0.22);
+  --neon: #57f2ff;
+  --neon2: #b46bff;
+  --pink: #ff5ecd;
+  --text: #eaf2ff;
+  --muted: #93a4c8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  color: var(--text);
+  background: #05060f;
+  overflow: hidden;
+}
+
+#bg {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  z-index: 0;
+}
+
+#app {
+  position: relative;
+  z-index: 1;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.panel {
+  width: min(560px, 100%);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--glass);
+  border: 1px solid var(--glass-brd);
+  border-radius: 22px;
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.head {
+  padding: 26px 28px 18px;
+  border-bottom: 1px solid rgba(150, 180, 255, 0.12);
+}
+
+.title {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  background: linear-gradient(90deg, var(--neon), var(--neon2), var(--pink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 14px rgba(120, 180, 255, 0.35));
+}
+
+.sub {
+  margin-top: 4px;
+  font-size: 12.5px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.stats {
+  display: flex;
+  gap: 18px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.stats b { color: var(--neon); font-weight: 700; }
+
+.inputrow {
+  display: flex;
+  gap: 10px;
+  padding: 18px 28px;
+}
+
+#new {
+  flex: 1;
+  padding: 13px 16px;
+  font-size: 15px;
+  color: var(--text);
+  background: rgba(10, 14, 34, 0.6);
+  border: 1px solid var(--glass-brd);
+  border-radius: 13px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+#new:focus {
+  border-color: var(--neon);
+  box-shadow: 0 0 0 3px rgba(87, 242, 255, 0.15);
+}
+#new::placeholder { color: #5f6f95; }
+
+.addbtn {
+  padding: 0 20px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #04121a;
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  border: none;
+  border-radius: 13px;
+  cursor: pointer;
+  transition: transform 0.12s, filter 0.2s;
+}
+.addbtn:hover { filter: brightness(1.12); }
+.addbtn:active { transform: scale(0.93); }
+
+.list {
+  list-style: none;
+  overflow-y: auto;
+  padding: 4px 18px 20px;
+  flex: 1;
+}
+.list::-webkit-scrollbar { width: 8px; }
+.list::-webkit-scrollbar-thumb {
+  background: rgba(120, 150, 220, 0.3);
+  border-radius: 8px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  margin: 8px 2px;
+  background: rgba(14, 18, 40, 0.5);
+  border: 1px solid rgba(150, 180, 255, 0.12);
+  border-radius: 14px;
+  animation: pop 0.4s cubic-bezier(0.2, 1.4, 0.4, 1);
+  transition: transform 0.25s, opacity 0.25s, border-color 0.2s;
+}
+.item:hover { border-color: rgba(150, 180, 255, 0.32); }
+.item.leaving {
+  opacity: 0;
+  transform: translateX(40px) scale(0.9);
+}
+
+@keyframes pop {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+.check {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid var(--neon);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.check::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 3px;
+  width: 6px;
+  height: 11px;
+  border: solid #04121a;
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 0.2s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.item.done .check {
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  box-shadow: 0 0 14px rgba(87, 242, 255, 0.55);
+}
+.item.done .check::after { transform: rotate(45deg) scale(1); }
+
+.label {
+  flex: 1;
+  font-size: 15.5px;
+  cursor: pointer;
+  word-break: break-word;
+  transition: color 0.2s, opacity 0.2s;
+}
+.item.done .label {
+  color: var(--muted);
+  text-decoration: line-through;
+  opacity: 0.65;
+}
+
+.del {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 9px;
+  background: rgba(255, 94, 205, 0.12);
+  color: var(--pink);
+  font-size: 17px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+}
+.item:hover .del { opacity: 1; }
+.del:hover { background: rgba(255, 94, 205, 0.28); }
+
+.empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 40px 20px;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+  padding: 14px 28px 22px;
+  border-top: 1px solid rgba(150, 180, 255, 0.12);
+}
+.filter {
+  padding: 7px 14px;
+  font-size: 12.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.filter:hover { color: var(--text); }
+.filter.active {
+  color: var(--neon);
+  border-color: rgba(87, 242, 255, 0.4);
+  background: rgba(87, 242, 255, 0.08);
+}
+.clearbtn {
+  margin-left: auto;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--pink);
+  background: transparent;
+  border: 1px solid rgba(255, 94, 205, 0.3);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.clearbtn:hover { background: rgba(255, 94, 205, 0.12); }
+
+#toast {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%) translateY(30px);
+  z-index: 5;
+  padding: 10px 18px;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  background: rgba(20, 24, 50, 0.85);
+  border: 1px solid var(--glass-brd);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+}
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+#toast.err { border-color: var(--pink); color: var(--pink); }
