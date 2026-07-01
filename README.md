@@ -18,7 +18,7 @@ with particle bursts on every action — and a hand-rolled dev server that
 
 ```bash
 npm install
-npm run dev      # http://localhost:3000  (WebSocket on 3001)
+npm run dev      # http://localhost:3000  (live-reload WebSocket on the same origin)
 ```
 
 Production build:
@@ -30,7 +30,9 @@ npm run build    # -> dist/
 ## How live reload works
 
 `dev-server.mjs` runs an esbuild `context`, serves `dist/`, and injects a tiny
-WebSocket client into `index.html`. It watches `src/`:
+WebSocket client into `index.html`. The client connects back over a same-origin
+WebSocket at `/__livereload` (so it works behind proxies and over https). It
+watches `src/`:
 
 | You edit…            | Server broadcasts        | Browser does…                          |
 | -------------------- | ------------------------ | -------------------------------------- |
