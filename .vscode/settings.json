@@ -1,0 +1,8 @@
+{
+  "files.associations": {
+    "*.frag.glsl": "glsl",
+    "*.vert.glsl": "glsl",
+    "*.glsl": "glsl"
+  },
+  "typescript.tsdk": "node_modules/typescript/lib"
+}
