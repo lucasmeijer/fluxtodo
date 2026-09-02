@@ -5,6 +5,8 @@ attribute float aBirth;
 uniform float uTime;
 uniform float uLife;
 uniform float uSize;
+uniform float uGravity;
+uniform float uSwirl;
 
 varying float vAlpha;
 varying float vSeed;
@@ -14,8 +16,8 @@ void main() {
   float life = clamp(age / uLife, 0.0, 1.0);
 
   vec3 pos = position + aVelocity * age;
-  pos.y -= 0.55 * age * age;            // gravity
-  pos += 0.15 * sin(vec3(aSeed * 6.28) + uTime * 3.0) * age; // swirl
+  pos.y -= uGravity * age * age;
+  pos += uSwirl * sin(vec3(aSeed * 6.28) + uTime * 3.0) * age;
 
   vAlpha = (1.0 - life) * step(0.0, age) * (1.0 - step(1.0, life));
   vSeed = aSeed;

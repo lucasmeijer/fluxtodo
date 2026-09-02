@@ -3,7 +3,15 @@ import vertSrc from "./shaders/background.vert.glsl";
 import fragSrc from "./shaders/background.frag.glsl";
 import { registerShader } from "./hot";
 
-export function createBackground(canvas: HTMLCanvasElement) {
+interface BackgroundLooks {
+  speed: number;
+  scale: number;
+  ripple: number;
+  glow: number;
+  saturation: number;
+}
+
+export function createBackground(canvas: HTMLCanvasElement, looks: BackgroundLooks) {
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
@@ -19,6 +27,11 @@ export function createBackground(canvas: HTMLCanvasElement) {
     uResolution: { value: new THREE.Vector2(1, 1) },
     uMouse: { value: new THREE.Vector2(0.5, 0.5) },
     uEnergy: { value: 0 },
+    uSpeed: { value: looks.speed },
+    uScale: { value: looks.scale },
+    uRipple: { value: looks.ripple },
+    uGlow: { value: looks.glow },
+    uSaturation: { value: looks.saturation },
   };
 
   const material = new THREE.ShaderMaterial({

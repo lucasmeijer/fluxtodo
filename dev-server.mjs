@@ -1,7 +1,6 @@
 import esbuild from "esbuild";
 import { WebSocketServer } from "ws";
 import http from "node:http";
-import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -205,18 +204,70 @@ async function flush() {
   }
 }
 
-function watch() {
-  fs.watch(SRC, { recursive: true }, (_event, filename) => {
-    if (!filename) return;
-    const full = path.join(SRC, filename);
-    // ignore editor temp files
-    if (filename.endsWith("~") || filename.startsWith(".")) return;
-    onChange(full);
-  });
-  // index.html lives in public/
-  fs.watch(path.join(__dirname, "public"), (_e, filename) => {
-    if (filename) onChange(path.join(__dirname, "public", filename));
-  });
+// fs.watch({ recursive: true }) is unreliable with atomic saves, bind mounts,
+// and some container filesystems. A small polling snapshot catches all of those
+// cases, including files being added, renamed, or deleted.
+const WATCH_INTERVAL = Number(process.env.WATCH_INTERVAL) || 250;
+const WATCH_ROOTS = [SRC, path.join(__dirname, "public")];
+
+function isEditorTemp(file) {
+  const name = path.basename(file);
+  return name.startsWith(".") || name.endsWith("~") || name.endsWith(".swp");
+}
+
+async function snapshotTree(root, snapshot) {
+  let entries;
+  try {
+    entries = await fsp.readdir(root, { withFileTypes: true });
+  } catch (err) {
+    if (err.code !== "ENOENT") console.warn(`[watch] cannot read ${root}:`, err.message);
+    return;
+  }
+
+  await Promise.all(entries.map(async (entry) => {
+    const full = path.join(root, entry.name);
+    if (isEditorTemp(full)) return;
+    if (entry.isDirectory()) return snapshotTree(full, snapshot);
+    if (!entry.isFile()) return;
+    try {
+      const stat = await fsp.stat(full);
+      snapshot.set(full, `${stat.mtimeMs}:${stat.size}`);
+    } catch (err) {
+      if (err.code !== "ENOENT") console.warn(`[watch] cannot stat ${full}:`, err.message);
+    }
+  }));
+}
+
+async function takeSnapshot() {
+  const snapshot = new Map();
+  await Promise.all(WATCH_ROOTS.map((root) => snapshotTree(root, snapshot)));
+  return snapshot;
+}
+
+async function watch() {
+  let previous = await takeSnapshot();
+  let scanning = false;
+
+  setInterval(async () => {
+    if (scanning) return;
+    scanning = true;
+    try {
+      const next = await takeSnapshot();
+      for (const [file, signature] of next) {
+        if (previous.get(file) !== signature) onChange(file);
+      }
+      for (const file of previous.keys()) {
+        if (!next.has(file)) onChange(file);
+      }
+      previous = next;
+    } catch (err) {
+      console.warn("[watch] scan failed:", err.message);
+    } finally {
+      scanning = false;
+    }
+  }, WATCH_INTERVAL);
+
+  console.log(`👀 polling src/ and public/ every ${WATCH_INTERVAL}ms`);
 }
 
 // ---- boot -------------------------------------------------------------------
@@ -226,6 +277,6 @@ function watch() {
   await copyStatic();
   await copyShaders();
   serve();
-  watch();
-  console.log("\ud83d\udc40 watching src/ \u2014 edit a .glsl file to see a live shader hot-swap\n");
+  await watch();
+  console.log("   edit a .glsl file to see a live shader hot-swap\n");
 })();

@@ -6,6 +6,11 @@ uniform float uTime;
 uniform vec2  uResolution;
 uniform vec2  uMouse;
 uniform float uEnergy;   // rises when you complete todos
+uniform float uSpeed;
+uniform float uScale;
+uniform float uRipple;
+uniform float uGlow;
+uniform float uSaturation;
 
 // --- hash / noise -----------------------------------------------------------
 vec2 hash2(vec2 p) {
@@ -41,17 +46,18 @@ void main() {
   vec2 uv = vUv;
   vec2 p = (uv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
 
-  float t = uTime * 0.01;
+  float t = uTime * 0.01 * uSpeed;
+  vec2 sp = p * uScale;
 
   // domain-warped fbm for a liquid, flowing look
-  vec2 q = vec2(fbm(p * 1.6 + t), fbm(p * 1.6 - t + 4.3));
-  vec2 r = vec2(fbm(p * 1.6 + q * 1.4 + t * 1.3 + 1.7),
-                fbm(p * 1.6 + q * 1.4 - t * 1.1 + 9.2));
-  float f = fbm(p * 1.8 + r * 1.5 + t);
+  vec2 q = vec2(fbm(sp * 1.6 + t), fbm(sp * 1.6 - t + 4.3));
+  vec2 r = vec2(fbm(sp * 1.6 + q * 1.4 + t * 1.3 + 1.7),
+                fbm(sp * 1.6 + q * 1.4 - t * 1.1 + 9.2));
+  float f = fbm(sp * 1.8 + r * 1.5 + t);
 
   // mouse ripple
   float md = distance(uv, uMouse);
-  f += 0.12 * sin(md * 26.0 - uTime * 2.2) * exp(-md * 4.0);
+  f += 0.12 * uRipple * sin(md * 26.0 - uTime * 2.2) * exp(-md * 4.0);
 
   // palette
   vec3 c1 = vec3(0.03, 0.05, 0.17);   // deep space
@@ -65,7 +71,8 @@ void main() {
 
   // glowing filaments
   float lines = abs(0.5 + 0.5 * sin((r.x + r.y) * 8.0 + uTime * 0.6));
-  col += (0.10 + 0.25 * uEnergy) * c3 * pow(1.0 - lines, 4.0);
+  col += uGlow * (0.10 + 0.25 * uEnergy) * c3 * pow(1.0 - lines, 4.0);
+  col = mix(vec3(dot(col, vec3(0.299, 0.587, 0.114))), col, uSaturation);
 
   // vignette
   float vig = smoothstep(1.25, 0.25, length(uv - 0.5));

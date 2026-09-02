@@ -6,6 +6,9 @@
   --pink: #ff5ecd;
   --text: #eaf2ff;
   --muted: #93a4c8;
+  --panel-width: 560px;
+  --panel-radius: 22px;
+  --panel-blur: 18px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -38,15 +41,15 @@ html, body {
 }
 
 .panel {
-  width: min(560px, 100%);
+  width: min(var(--panel-width), 100%);
   max-height: 88vh;
   display: flex;
   flex-direction: column;
   background: var(--glass);
   border: 1px solid var(--glass-brd);
-  border-radius: 22px;
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border-radius: var(--panel-radius);
+  backdrop-filter: blur(var(--panel-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--panel-blur)) saturate(140%);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
   overflow: hidden;

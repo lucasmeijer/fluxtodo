@@ -4,9 +4,16 @@ import fragSrc from "./shaders/particle.frag.glsl";
 import { registerShader } from "./hot";
 
 const MAX = 4000;
-const LIFE = 1.6;
 
-export function createParticles(scene: THREE.Scene) {
+interface ParticleLooks {
+  life: number;
+  size: number;
+  speed: number;
+  gravity: number;
+  swirl: number;
+}
+
+export function createParticles(scene: THREE.Scene, looks: ParticleLooks) {
   const geo = new THREE.BufferGeometry();
   const position = new Float32Array(MAX * 3);
   const velocity = new Float32Array(MAX * 3);
@@ -21,8 +28,10 @@ export function createParticles(scene: THREE.Scene) {
 
   const uniforms = {
     uTime: { value: 0 },
-    uLife: { value: LIFE },
-    uSize: { value: 26 },
+    uLife: { value: looks.life },
+    uSize: { value: looks.size },
+    uGravity: { value: looks.gravity },
+    uSwirl: { value: looks.swirl },
   };
 
   const material = new THREE.ShaderMaterial({
@@ -61,7 +70,7 @@ export function createParticles(scene: THREE.Scene) {
       const idx = cursor % MAX;
       cursor++;
       const a = Math.random() * Math.PI * 2;
-      const speed = 0.4 + Math.random() * 1.1;
+      const speed = (0.4 + Math.random() * 1.1) * looks.speed;
       position[idx * 3] = wx;
       position[idx * 3 + 1] = wy;
       position[idx * 3 + 2] = 0;

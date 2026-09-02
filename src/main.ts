@@ -8,11 +8,57 @@ import { installHotSwap } from "./webgl/hot";
 installHotSwap();
 
 // ---------------------------------------------------------------------------
+// LOOKS — tweak these values to dramatically restyle the whole experience.
+// Colors accept any CSS color. Most numeric values are safe around 0.25–3x.
+// ---------------------------------------------------------------------------
+const LOOKS = {
+  colors: {
+    neon: "#ffe66d",
+    secondary: "#ff8c42",
+    accent: "#ff3d71",
+    text: "#44ff88",
+    muted: "#c8a98b",
+    glass: "rgba(28, 9, 12, 0.72)",
+  },
+  panel: {
+    width: 680,       // pixels
+    roundness: 6,     // pixels
+    blur: 30,         // glass blur in pixels
+  },
+  background: {
+    speed: 4.0,       // flow speed
+    scale: 0.45,      // size of cloudy forms
+    ripple: 3.0,      // mouse ripple strength
+    glow: 3.5,        // filament brightness
+    saturation: 0.12, // overall color intensity
+  },
+  particles: {
+    life: 3.0,        // seconds
+    size: 44,         // pixels
+    speed: 0.55,
+    gravity: 0.12,
+    swirl: 0.5,
+    amount: 2.2,      // particles per burst multiplier
+  },
+} as const;
+
+const rootStyle = document.documentElement.style;
+rootStyle.setProperty("--neon", LOOKS.colors.neon);
+rootStyle.setProperty("--neon2", LOOKS.colors.secondary);
+rootStyle.setProperty("--pink", LOOKS.colors.accent);
+rootStyle.setProperty("--text", LOOKS.colors.text);
+rootStyle.setProperty("--muted", LOOKS.colors.muted);
+rootStyle.setProperty("--glass", LOOKS.colors.glass);
+rootStyle.setProperty("--panel-width", `${LOOKS.panel.width}px`);
+rootStyle.setProperty("--panel-radius", `${LOOKS.panel.roundness}px`);
+rootStyle.setProperty("--panel-blur", `${LOOKS.panel.blur}px`);
+
+// ---------------------------------------------------------------------------
 // WebGL scene
 // ---------------------------------------------------------------------------
 const canvas = document.getElementById("bg") as HTMLCanvasElement;
-const bg = createBackground(canvas);
-const particles = createParticles(bg.scene);
+const bg = createBackground(canvas, LOOKS.background);
+const particles = createParticles(bg.scene, LOOKS.particles);
 
 const clock = new THREE.Clock();
 function loop() {
@@ -28,7 +74,7 @@ function burstAt(el: Element, count = 90, hue = Math.random()) {
   const r = el.getBoundingClientRect();
   const nx = (r.left + r.width / 2) / window.innerWidth;
   const ny = 1 - (r.top + r.height / 2) / window.innerHeight;
-  particles.burst(nx, ny, count, hue);
+  particles.burst(nx, ny, Math.round(count * LOOKS.particles.amount), hue);
   bg.pulse(0.5);
 }
 
