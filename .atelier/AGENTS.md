@@ -1,0 +1,1 @@
+When the user asks for a change to the app, always present the running app with the completed change using Atelier's preview browser so the user can evaluate it. Use the already-running development server and browser; do not restart them unless the user explicitly asks you to.
