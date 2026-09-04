@@ -5,82 +5,96 @@ varying vec2 vUv;
 uniform float uTime;
 uniform vec2  uResolution;
 uniform vec2  uMouse;
-uniform float uEnergy;   // rises when you complete todos
+uniform float uEnergy;
 uniform float uSpeed;
 uniform float uScale;
 uniform float uRipple;
 uniform float uGlow;
 uniform float uSaturation;
 
-// --- hash / noise -----------------------------------------------------------
-vec2 hash2(vec2 p) {
-  p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
-  return -1.0 + 2.0 * fract(sin(p) * 43758.5453123);
+#define PI 3.14159265359
+
+float hash21(vec2 p) {
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
+  return fract(p.x * p.y);
 }
 
-float noise(vec2 p) {
-  vec2 i = floor(p);
-  vec2 f = fract(p);
-  vec2 u = f * f * (3.0 - 2.0 * f);
-  return mix(
-    mix(dot(hash2(i + vec2(0.0, 0.0)), f - vec2(0.0, 0.0)),
-        dot(hash2(i + vec2(1.0, 0.0)), f - vec2(1.0, 0.0)), u.x),
-    mix(dot(hash2(i + vec2(0.0, 1.0)), f - vec2(0.0, 1.0)),
-        dot(hash2(i + vec2(1.0, 1.0)), f - vec2(1.0, 1.0)), u.x),
-    u.y);
-}
-
-float fbm(vec2 p) {
-  float v = 0.0;
-  float a = 0.5;
-  mat2 rot = mat2(0.80, 0.60, -0.60, 0.80);
-  for (int i = 0; i < 6; i++) {
-    v += a * noise(p);
-    p = rot * p * 2.0 + 0.03;
-    a *= 0.5;
-  }
-  return v;
+float softLine(float value, float width) {
+  return 1.0 - smoothstep(0.0, width, abs(value));
 }
 
 void main() {
   vec2 uv = vUv;
-  vec2 p = (uv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+  float aspect = uResolution.x / uResolution.y;
+  vec2 p = (uv - 0.5) * vec2(aspect, 1.0);
+  vec2 mouse = (uMouse - 0.5) * vec2(aspect, 1.0);
 
-  float t = uTime * 0.01 * uSpeed;
-  vec2 sp = p * uScale;
+  float time = uTime * (0.16 + uSpeed * 0.035);
+  float energy = min(uEnergy, 1.5);
 
-  // domain-warped fbm for a liquid, flowing look
-  vec2 q = vec2(fbm(sp * 1.6 + t), fbm(sp * 1.6 - t + 4.3));
-  vec2 r = vec2(fbm(sp * 1.6 + q * 1.4 + t * 1.3 + 1.7),
-                fbm(sp * 1.6 + q * 1.4 - t * 1.1 + 9.2));
-  float f = fbm(sp * 1.8 + r * 1.5 + t);
+  // Pull the warp core subtly toward the pointer.
+  vec2 core = mouse * 0.16;
+  vec2 q = p - core;
+  float radius = length(q);
+  float angle = atan(q.y, q.x);
 
-  // mouse ripple
-  float md = distance(uv, uMouse);
-  f += 0.12 * uRipple * sin(md * 26.0 - uTime * 2.2) * exp(-md * 4.0);
+  // A rotating spiral tunnel: crisp, graphic, and very different from clouds.
+  float turns = 9.0 + uScale * 5.0;
+  float spiralPhase = angle * 5.0 - log(radius + 0.055) * turns + time * 2.1;
+  float spiral = pow(max(0.0, 0.5 + 0.5 * cos(spiralPhase)), 12.0);
+  spiral *= smoothstep(0.035, 0.28, radius) * (1.0 - smoothstep(0.35, 1.15, radius));
 
-  // palette
-  vec3 c1 = vec3(0.03, 0.05, 0.17);   // deep space
-  vec3 c2 = vec3(0.20, 0.10, 0.55);   // violet
-  vec3 c3 = vec3(0.10, 0.75, 0.95);   // cyan
-  vec3 c4 = vec3(1.00, 0.36, 0.85);   // pink
+  // Concentric shock rings travel outward from the core.
+  float ringPhase = radius * 22.0 - time * 3.2;
+  float rings = pow(max(0.0, 0.5 + 0.5 * cos(ringPhase)), 24.0);
+  rings *= smoothstep(0.08, 0.22, radius) * (1.0 - smoothstep(0.65, 1.25, radius));
 
-  vec3 col = mix(c1, c2, smoothstep(-0.4, 0.5, f));
-  col = mix(col, c3, smoothstep(0.15, 0.75, length(q)));
-  col = mix(col, c4, smoothstep(0.55, 0.95, r.x + uEnergy * 0.35));
+  // Polar star lanes rush toward the viewer.
+  float sector = floor((angle + PI) / (2.0 * PI) * 150.0);
+  float depth = fract(sector * 0.618 + 1.0 / (radius + 0.045) * 0.075 - time * 0.55);
+  float seed = hash21(vec2(sector, floor(time * 0.55)));
+  float ray = pow(max(0.0, 1.0 - abs(fract((angle / (2.0 * PI)) * 150.0) - 0.5) * 2.0), 20.0);
+  float stars = ray * pow(depth, 7.0) * step(0.69, seed);
+  stars *= smoothstep(0.16, 0.48, radius);
 
-  // glowing filaments
-  float lines = abs(0.5 + 0.5 * sin((r.x + r.y) * 8.0 + uTime * 0.6));
-  col += uGlow * (0.10 + 0.25 * uEnergy) * c3 * pow(1.0 - lines, 4.0);
-  col = mix(vec3(dot(col, vec3(0.299, 0.587, 0.114))), col, uSaturation);
+  // Pointer sends a luminous circular disturbance through the tunnel.
+  float pointerDistance = distance(p, mouse);
+  float ripple = softLine(sin(pointerDistance * 28.0 - uTime * 3.5), 0.13);
+  ripple *= exp(-pointerDistance * 3.5) * 0.16 * uRipple;
 
-  // vignette
-  float vig = smoothstep(1.25, 0.25, length(uv - 0.5));
-  col *= 0.55 + 0.6 * vig;
+  vec3 midnight = vec3(0.008, 0.004, 0.025);
+  vec3 violet = vec3(0.28, 0.015, 0.52);
+  vec3 hotPink = vec3(1.0, 0.025, 0.32);
+  vec3 solar = vec3(1.0, 0.72, 0.08);
+  vec3 electricBlue = vec3(0.04, 0.58, 1.0);
 
-  // subtle grain
-  col += (hash2(uv * uResolution + uTime).x) * 0.025;
+  // Angular color bands revolve independently from the geometry.
+  float paletteShift = 0.5 + 0.5 * sin(angle * 2.0 - time + radius * 5.0);
+  vec3 neon = mix(hotPink, solar, paletteShift);
+  neon = mix(neon, electricBlue, 0.5 + 0.5 * sin(angle * 3.0 + time * 0.7));
+
+  vec3 col = midnight;
+  col += violet * (0.12 / (radius + 0.14));
+  col += neon * spiral * (0.38 + 0.15 * uGlow);
+  col += mix(hotPink, solar, radius) * rings * (0.25 + energy * 0.7);
+  col += mix(electricBlue, solar, depth) * stars * (1.2 + uGlow * 0.28);
+  col += solar * ripple;
+
+  // Black-hole core, surrounded by a hot event horizon.
+  float horizon = exp(-abs(radius - (0.105 + energy * 0.012)) * 85.0);
+  col += mix(hotPink, solar, 0.55 + 0.45 * sin(time)) * horizon * (0.8 + energy);
+  col *= smoothstep(0.025, 0.12, radius);
+  col += vec3(0.015, 0.005, 0.025) * (1.0 - smoothstep(0.0, 0.085, radius));
+
+  // Keep the edges cinematic and add fine analog grain.
+  float vignette = smoothstep(1.12, 0.22, length((uv - 0.5) * vec2(0.85, 1.0)));
+  col *= 0.42 + 0.75 * vignette;
+  col += (hash21(gl_FragCoord.xy + floor(uTime * 30.0)) - 0.5) * 0.035;
+
+  float luminance = dot(col, vec3(0.299, 0.587, 0.114));
+  col = mix(vec3(luminance), col, 0.8 + uSaturation * 1.5);
+  col = col / (1.0 + col * 0.38);
 
   gl_FragColor = vec4(col, 1.0);
 }
-
